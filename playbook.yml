@@ -41,7 +41,7 @@
     - include_role:
         name: baseline
 
-- name: Local baseline
+- name: Paramiko baseline
   hosts: all
   gather_facts: false
   tags:
