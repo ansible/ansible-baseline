@@ -1,6 +1,8 @@
 - name: Local baseline
   hosts: all
   gather_facts: false
+  tags:
+    - local
   vars:
     ansible_connection: local
     ansible_python_interpreter: "{{ ansible_playbook_python }}"
@@ -13,8 +15,26 @@
 - name: SSH baseline
   hosts: all
   gather_facts: false
+  tags:
+    - ssh
   vars:
     ansible_connection: ssh
+    ansible_ssh_pipelining: false
+  tasks:
+    - import_tasks: tasks/baseline.yml
+
+    - include_role:
+        name: baseline
+
+- name: SSH+pipelining baseline
+  hosts: all
+  gather_facts: false
+  tags:
+    - ssh
+    - pipelining
+  vars:
+    ansible_connection: ssh
+    ansible_ssh_pipelining: True
   tasks:
     - import_tasks: tasks/baseline.yml
 
@@ -24,6 +44,8 @@
 - name: Local baseline
   hosts: all
   gather_facts: false
+  tags:
+    - paramiko
   vars:
     ansible_connection: paramiko
   tasks:
