@@ -1,0 +1,6 @@
+# {{ ansible_managed }}
+# Host: {{ inventory_hostname }}
+# Template Host: {{ template_host }}
+{% for key, value in (hostvars[inventory_hostname]|dictsort)[:25] %}
+key = value|to_json
+{% endfor %}

@@ -1,0 +1,33 @@
+- name: Local baseline
+  hosts: all
+  gather_facts: false
+  vars:
+    ansible_connection: local
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
+  tasks:
+    - import_tasks: tasks/baseline.yml
+
+    - include_role:
+        name: baseline
+
+- name: SSH baseline
+  hosts: all
+  gather_facts: false
+  vars:
+    ansible_connection: ssh
+  tasks:
+    - import_tasks: tasks/baseline.yml
+
+    - include_role:
+        name: baseline
+
+- name: Local baseline
+  hosts: all
+  gather_facts: false
+  vars:
+    ansible_connection: paramiko
+  tasks:
+    - import_tasks: tasks/baseline.yml
+
+    - include_role:
+        name: baseline

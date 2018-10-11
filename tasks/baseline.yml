@@ -1,0 +1,91 @@
+- name: Gather Facts
+  setup:
+
+- name: Create tmpdir for later use
+  tempfile:
+    state: directory
+  register: tempfile_result
+
+- name: Set tmpdir fact
+  set_fact:
+    tmpdir: "{{ tempfile_result.path }}"
+
+- ping:
+
+- raw: whoami
+  changed_when: false
+
+- shell: whoami
+  changed_when: false
+
+- name: Copy a sequence of files that are larger in each iteration
+  copy:
+    src: "{{ item }}"
+    dest: "{{ tmpdir }}/{{ item }}"
+  loop:
+    - 64k.bin
+    - 128k.bin
+    - 256k.bin
+    - 512k.bin
+    - 1024k.bin
+
+- name: Change permissions on the sequence of files
+  file:
+    path: "{{ tmpdir }}/{{ item }}"
+    mode: "0400"
+  loop:
+    - 64k.bin
+    - 128k.bin
+    - 256k.bin
+    - 512k.bin
+    - 1024k.bin
+
+- name: Stat all of the files
+  stat:
+    path: "{{ tmpdir }}/{{ item }}"
+  loop:
+    - 64k.bin
+    - 128k.bin
+    - 256k.bin
+    - 512k.bin
+    - 1024k.bin
+  register: bin_stats
+
+- name: Raw stat all of the files
+  raw: "stat {{ tmpdir }}/{{ item }}"
+  changed_when: false
+  loop:
+    - 64k.bin
+    - 128k.bin
+    - 256k.bin
+    - 512k.bin
+    - 1024k.bin
+  register: raw_bin_stats
+
+- name: Raw python stat all of the files
+  raw: |
+    python -c 'import os, json; s = os.stat("{{ tmpdir }}/{{ item }}"); print(json.dumps(dict((a[3:], getattr(s, a)) for a in dir(s) if a[:3] == "st_")))'
+  changed_when: false
+  loop:
+    - 64k.bin
+    - 128k.bin
+    - 256k.bin
+    - 512k.bin
+    - 1024k.bin
+  register: raw_python_bin_stats
+
+- debug:
+    msg: "{{ item.stdout|from_json }}"
+  loop: "{{ raw_python_bin_stats.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+
+- name: Template out a file
+  template:
+    src: template.j2
+    dest: "{{ tmpdir }}/template.out"
+
+- name: Remove tmpdir
+  file:
+    path: "{{ tmpdir }}"
+    state: absent
