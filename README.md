@@ -13,6 +13,12 @@ The only thing to note, is that `ansible_connection` will be overridden for each
 $ ansible-playbook -i /path/to/inventory playbook.yml
 ```
 
+### Baseline allback plugin
+
+This repo ships a custom callback plugin named `baseline` that does *not* require whitelisting, and will always run.
+
+By default host timings are also shown, but this can be disabled using `BASELINE_SHOW_HOST_TIMINGS=0 ansible-playbook ...`
+
 ## Testing Matrix
 
 There are a few things that this baseline is ignorant of, that should be accounted for in a testing matrix.
