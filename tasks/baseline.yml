@@ -64,7 +64,7 @@
 
 - name: Raw python stat all of the files
   raw: |
-    python -c 'import os, json; s = os.stat("{{ tmpdir }}/{{ item }}"); print(json.dumps(dict((a[3:], getattr(s, a)) for a in dir(s) if a[:3] == "st_")))'
+    {{ ansible_python_interpreter|default('/usr/bin/python') }} -c 'import os, json; s = os.stat("{{ tmpdir }}/{{ item }}"); print(json.dumps(dict((a[3:], getattr(s, a)) for a in dir(s) if a[:3] == "st_")))'
   changed_when: false
   loop:
     - 64k.bin
