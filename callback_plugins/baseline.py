@@ -59,7 +59,7 @@ class CallbackModule(CallbackBase):
         """
         def inner(*args):
             host = args[3]
-            self._host_timings[host.name] = current_time()
+            self._host_start[host.name] = current_time()
             func(*args)
         return inner
 
@@ -76,7 +76,7 @@ class CallbackModule(CallbackBase):
         }
 
     def _new_task(self, task):
-        self._host_timings = {}
+        self._host_start = {}
         return {
             'task': {
                 'name': task.get_name(),
@@ -143,7 +143,7 @@ class CallbackModule(CallbackBase):
         task_result['action'] = task.action
         self.results[-1]['tasks'][-1]['hosts'][host.name] = task_result
         self.results[-1]['tasks'][-1]['hosts'][host.name]['_duration'] = {
-            'start': self._host_timings[host.name],
+            'start': self._host_start[host.name],
             'end': end_time
         }
         self.results[-1]['tasks'][-1]['task']['duration']['end'] = end_time
