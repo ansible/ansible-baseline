@@ -26,14 +26,14 @@ DOCUMENTATION = '''
 '''
 
 import datetime
-import json
 
 from functools import partial
 
 from ansible.inventory.host import Host
 
-from ansible.plugins.callback import CallbackBase
 from ansible.executor.process.worker import WorkerProcess
+
+from ansible.plugins.callback import CallbackBase
 
 
 def current_time():
@@ -161,4 +161,3 @@ class CallbackModule(CallbackBase):
             on_info[on] = True
 
         return partial(self._record_task_result, on_info)
-
