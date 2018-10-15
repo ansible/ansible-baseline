@@ -22,7 +22,7 @@
   copy:
     src: "{{ item }}"
     dest: "{{ tmpdir }}/{{ item }}"
-  loop:
+  with_list:
     - 64k.bin
     - 128k.bin
     - 256k.bin
@@ -33,7 +33,7 @@
   file:
     path: "{{ tmpdir }}/{{ item }}"
     mode: "0400"
-  loop:
+  with_list:
     - 64k.bin
     - 128k.bin
     - 256k.bin
@@ -43,7 +43,7 @@
 - name: Stat all of the files
   stat:
     path: "{{ tmpdir }}/{{ item }}"
-  loop:
+  with_list:
     - 64k.bin
     - 128k.bin
     - 256k.bin
@@ -54,7 +54,7 @@
 - name: Raw stat all of the files
   raw: "stat {{ tmpdir }}/{{ item }}"
   changed_when: false
-  loop:
+  with_list:
     - 64k.bin
     - 128k.bin
     - 256k.bin
@@ -66,7 +66,7 @@
   raw: |
     {{ ansible_python_interpreter|default('/usr/bin/python') }} -c 'import os, json; s = os.stat("{{ tmpdir }}/{{ item }}"); print(json.dumps(dict((a[3:], getattr(s, a)) for a in dir(s) if a[:3] == "st_")))'
   changed_when: false
-  loop:
+  with_list:
     - 64k.bin
     - 128k.bin
     - 256k.bin
@@ -76,7 +76,7 @@
 
 - debug:
     msg: "{{ item.stdout|from_json }}"
-  loop: "{{ raw_python_bin_stats.results }}"
+  with_list: "{{ raw_python_bin_stats.results }}"
   loop_control:
     label: "{{ item.item }}"
 
