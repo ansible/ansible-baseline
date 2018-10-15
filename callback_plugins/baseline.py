@@ -14,7 +14,6 @@ DOCUMENTATION = '''
     type: aggregate
     options:
       show_host_timings:
-        name: Show host timings
         description: This adds host timings per task
         default: True
         env:
@@ -23,15 +22,41 @@ DOCUMENTATION = '''
           - key: show_host_timings
             section: baseline
         type: bool
+      write_json:
+        description: Writes output to a JSON file
+        default: False
+        env:
+          - name: BASELINE_WRITE_JSON
+        ini:
+          - key: write_json
+            section: baseline
+        type: bool
+      json_file:
+        description: Path to JSON file for use with "write_json"
+        default: /tmp/baseline.json
+        env:
+          - name: BASELINE_JSON_FILE
+        ini:
+          - key: json_file
+            section: baseline
+        type: path
 '''
 
 import datetime
+import json
 
 from ansible.inventory.host import Host
 
 from ansible.executor.process.worker import WorkerProcess
 
 from ansible.plugins.callback import CallbackBase
+
+
+class _JSONEncoder(json.JSONEncoder):
+    def default(self, o):
+        if isinstance(o, datetime.datetime):
+            return o.isoformat()
+        return super(_JSONEncoder, self).default(o)
 
 
 def current_time():
@@ -45,9 +70,11 @@ class CallbackModule(CallbackBase):
 
     def __init__(self, display=None):
         super(CallbackModule, self).__init__(display)
-        self.results = []
+        self._results = []
         self._host_start = {}
         self._show_host_timings = True
+        self._write_json = False
+        self._json_file = '/tmp/baseline.json'
 
         self._play = None
         self._task = None
@@ -96,12 +123,16 @@ class CallbackModule(CallbackBase):
         super(CallbackModule, self).set_options(*args, **kwargs)
         try:
             self._show_host_timings = self.get_option('show_host_timings')
+            self._write_json = self.get_option('write_json')
+            self._json_file = self.get_option('json_file')
         except TypeError:
             # Ansible 2.4
             self._show_host_timings = self._plugin_options['show_host_timings']
+            self._write_json = self._plugin_options['write_json']
+            self._json_file = self._plugin_options['json_file']
 
     def v2_playbook_on_play_start(self, play):
-        self.results.append(self._new_play(play))
+        self._results.append(self._new_play(play))
 
     def v2_playbook_on_task_start(self, task, is_conditional):
         self._play['tasks'].append(self._new_task(task))
@@ -127,7 +158,11 @@ class CallbackModule(CallbackBase):
     def v2_playbook_on_stats(self, stats):
         """Display info about playbook statistics"""
 
-        for play in self.results:
+        if self._write_json:
+            with open(self._json_file, 'w+') as f:
+                json.dump(self._results, f, indent=4, cls=_JSONEncoder)
+
+        for play in self._results:
             try:
                 play_duration = play['play']['duration']['end'] - play['play']['duration']['start']
             except KeyError:
