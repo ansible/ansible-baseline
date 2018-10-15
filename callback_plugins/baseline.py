@@ -89,9 +89,8 @@ class CallbackModule(CallbackBase):
             'hosts': {}
         }
 
-    def set_options(self, options):
-        super(CallbackModule, self).set_options(options)
-
+    def set_options(self, *args, **kwargs):
+        super(CallbackModule, self).set_options(*args, **kwargs)
         try:
             self._show_host_timings = self.get_option('show_host_timings')
         except TypeError:
