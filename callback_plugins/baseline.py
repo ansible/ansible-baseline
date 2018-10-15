@@ -49,6 +49,7 @@ class CallbackModule(CallbackBase):
         super(CallbackModule, self).__init__(display)
         self.results = []
         self._host_start = {}
+        self._show_host_timings = True
 
         WorkerProcess.__init__ = self._infect_worker(WorkerProcess.__init__)
 
@@ -87,6 +88,15 @@ class CallbackModule(CallbackBase):
             },
             'hosts': {}
         }
+
+    def set_options(self, options):
+        super(CallbackModule, self).set_options(options)
+
+        try:
+            self._show_host_timings = self.get_option('show_host_timings')
+        except TypeError:
+            # Ansible 2.4
+            self._show_host_timings = self._plugin_options['show_host_timings']
 
     def v2_playbook_on_play_start(self, play):
         self.results.append(self._new_play(play))
@@ -127,7 +137,7 @@ class CallbackModule(CallbackBase):
                     u'%0.2fs' % task_duration.total_seconds(),
                     char='-'
                 )
-                if self.get_option('show_host_timings'):
+                if self._show_host_timings:
                     for host, data in task['hosts'].items():
                         host_duration = data['_duration']['end'] - data['_duration']['start']
                         self._print_stat(
