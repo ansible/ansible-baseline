@@ -27,8 +27,6 @@ DOCUMENTATION = '''
 
 import datetime
 
-from functools import partial
-
 from ansible.inventory.host import Host
 
 from ansible.executor.process.worker import WorkerProcess
@@ -68,7 +66,7 @@ class CallbackModule(CallbackBase):
         return inner
 
     def _new_play(self, play):
-        self._play  = {
+        self._play = {
             'play': {
                 'name': play.get_name(),
                 'id': str(play._uuid),
