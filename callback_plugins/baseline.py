@@ -51,6 +51,9 @@ class CallbackModule(CallbackBase):
         self._host_start = {}
         self._show_host_timings = True
 
+        self._play = None
+        self._task = None
+
         WorkerProcess.__init__ = self._infect_worker(WorkerProcess.__init__)
 
     def _infect_worker(self, func):
@@ -65,7 +68,7 @@ class CallbackModule(CallbackBase):
         return inner
 
     def _new_play(self, play):
-        return {
+        self._play  = {
             'play': {
                 'name': play.get_name(),
                 'id': str(play._uuid),
@@ -75,10 +78,11 @@ class CallbackModule(CallbackBase):
             },
             'tasks': []
         }
+        return self._play
 
     def _new_task(self, task):
         self._host_start = {}
-        return {
+        self._task = {
             'task': {
                 'name': task.get_name(),
                 'id': str(task._uuid),
@@ -88,6 +92,7 @@ class CallbackModule(CallbackBase):
             },
             'hosts': {}
         }
+        return self._task
 
     def set_options(self, *args, **kwargs):
         super(CallbackModule, self).set_options(*args, **kwargs)
@@ -101,10 +106,10 @@ class CallbackModule(CallbackBase):
         self.results.append(self._new_play(play))
 
     def v2_playbook_on_task_start(self, task, is_conditional):
-        self.results[-1]['tasks'].append(self._new_task(task))
+        self._play['tasks'].append(self._new_task(task))
 
     def v2_playbook_on_handler_task_start(self, task):
-        self.results[-1]['tasks'].append(self._new_task(task))
+        self._play['tasks'].append(self._new_task(task))
 
     def _convert_host_to_name(self, key):
         if isinstance(key, (Host,)):
@@ -117,11 +122,9 @@ class CallbackModule(CallbackBase):
         self._display.display('%s %s %s' % (start, char * fill, end))
 
     @staticmethod
-    def _host_start_offset(task):
-        def inner(host_data):
-            host, data = host_data
-            offset = data['_duration']['start'] - task['task']['duration']['start']
-            return offset.total_seconds()
+    def _host_start_offset(host_data):
+        host, data = host_data
+        return (data['offset']['end'] - data['offset']['start']).total_seconds()
 
     def v2_playbook_on_stats(self, stats):
         """Display info about playbook statistics"""
@@ -144,41 +147,33 @@ class CallbackModule(CallbackBase):
                     char=u'-'
                 )
                 if self._show_host_timings:
-                    for host, data in sorted(task['hosts'].items(), key=self._host_start_offset(task)):
-                        host_wait = data['_duration']['start'] - task['task']['duration']['start']
-                        host_duration = data['_duration']['end'] - data['_duration']['start']
+                    for host, data in sorted(task['hosts'].items(), key=self._host_start_offset):
+                        host_wait = (data['offset']['end'] - data['offset']['start']).total_seconds()
+                        host_duration = (data['duration']['end'] - data['duration']['start']).total_seconds()
                         self._print_stat(
                             u'        %s' % host,
-                            u'%0.2fs / %0.2fs' % (host_duration.total_seconds(), host_wait.total_seconds()),
+                            u'%0.2fs / %0.2fs' % (host_duration, host_wait),
                             char=u'.'
                         )
             self._display.display(u'')
 
-    def _record_task_result(self, on_info, result, **kwargs):
-        """This function is used as a partial to add failed/skipped info in a single method"""
+    def v2_runner_on_ok(self, result, **kwargs):
+        """Note: Do as few calculations in here, and limit stored data to prevent excessive
+        observer effect
+        """
         end_time = current_time()
-        host = result._host
-        task = result._task
-        task_result = result._result.copy()
-        task_result.update(on_info)
-        task_result['action'] = task.action
-        self.results[-1]['tasks'][-1]['hosts'][host.name] = task_result
-        self.results[-1]['tasks'][-1]['hosts'][host.name]['_duration'] = {
-            'start': self._host_start[host.name],
-            'end': end_time
+        host = result._host.name
+        self._task['hosts'][host] = {
+            'duration': {
+                'start': self._host_start[host],
+                'end': end_time
+            },
+            'offset': {
+                'start': self._task['task']['duration']['start'],
+                'end': self._host_start[host]
+            }
         }
-        self.results[-1]['tasks'][-1]['task']['duration']['end'] = end_time
-        self.results[-1]['play']['duration']['end'] = end_time
+        self._task['task']['duration']['end'] = end_time
+        self._play['play']['duration']['end'] = end_time
 
-    def __getattribute__(self, name):
-        """Return ``_record_task_result`` partial with a dict containing skipped/failed if necessary"""
-        if name not in ('v2_runner_on_ok', 'v2_runner_on_failed', 'v2_runner_on_unreachable', 'v2_runner_on_skipped'):
-            return object.__getattribute__(self, name)
-
-        on = name.rsplit('_', 1)[1]
-
-        on_info = {}
-        if on in ('failed', 'skipped'):
-            on_info[on] = True
-
-        return partial(self._record_task_result, on_info)
+    v2_runner_on_failed = v2_runner_on_unreachable = v2_runner_on_skipped = v2_runner_on_ok
