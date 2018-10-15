@@ -140,11 +140,6 @@ class CallbackModule(CallbackBase):
     def v2_playbook_on_handler_task_start(self, task):
         self._play['tasks'].append(self._new_task(task))
 
-    def _convert_host_to_name(self, key):
-        if isinstance(key, (Host,)):
-            return key.get_name()
-        return key
-
     def _print_stat(self, start, end, char=u'*'):
         columns = self._display.columns
         fill = columns - len(start) - len(end) - 2
