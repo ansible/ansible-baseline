@@ -111,10 +111,17 @@ class CallbackModule(CallbackBase):
             return key.get_name()
         return key
 
-    def _print_stat(self, start, end, char='*'):
+    def _print_stat(self, start, end, char=u'*'):
         columns = self._display.columns
         fill = columns - len(start) - len(end) - 2
         self._display.display('%s %s %s' % (start, char * fill, end))
+
+    @staticmethod
+    def _host_start_offset(task):
+        def inner(host_data):
+            host, data = host_data
+            offset = data['_duration']['start'] - task['task']['duration']['start']
+            return offset.total_seconds()
 
     def v2_playbook_on_stats(self, stats):
         """Display info about playbook statistics"""
@@ -134,15 +141,16 @@ class CallbackModule(CallbackBase):
                 self._print_stat(
                     u'    %s' % task['task']['name'],
                     u'%0.2fs' % task_duration.total_seconds(),
-                    char='-'
+                    char=u'-'
                 )
                 if self._show_host_timings:
-                    for host, data in task['hosts'].items():
+                    for host, data in sorted(task['hosts'].items(), key=self._host_start_offset(task)):
+                        host_wait = data['_duration']['start'] - task['task']['duration']['start']
                         host_duration = data['_duration']['end'] - data['_duration']['start']
                         self._print_stat(
                             u'        %s' % host,
-                            u'%0.2fs' % host_duration.total_seconds(),
-                            char='.'
+                            u'%0.2fs / %0.2fs' % (host_duration.total_seconds(), host_wait.total_seconds()),
+                            char=u'.'
                         )
             self._display.display(u'')
 
