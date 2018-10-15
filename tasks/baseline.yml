@@ -74,7 +74,8 @@
     - 1024k.bin
   register: raw_python_bin_stats
 
-- debug:
+- name: Debug raw_python_bin_stats
+  debug:
     msg: "{{ item.stdout|from_json }}"
   with_list: "{{ raw_python_bin_stats.results }}"
   loop_control:
