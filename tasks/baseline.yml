@@ -81,7 +81,7 @@
   loop_control:
     label: "{{ item.item }}"
 
-- name: Template out a file
+- name: Template out a file using hostvars
   template:
     src: template.j2
     dest: "{{ tmpdir }}/template.out"
