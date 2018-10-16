@@ -45,8 +45,6 @@ DOCUMENTATION = '''
 import datetime
 import json
 
-from ansible.inventory.host import Host
-
 from ansible.executor.process.worker import WorkerProcess
 
 from ansible.plugins.callback import CallbackBase
