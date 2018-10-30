@@ -45,9 +45,13 @@ DOCUMENTATION = '''
 import datetime
 import json
 
-from ansible.executor.process.worker import WorkerProcess
-
 from ansible.plugins.callback import CallbackBase
+
+try:
+    from ansible.executor.process.worker import WorkerProcess
+except ImportError:
+    # If this fails, it just means we are on a version where we don't need it
+    pass
 
 
 class _JSONEncoder(json.JSONEncoder):
