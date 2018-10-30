@@ -79,7 +79,7 @@ class CallbackModule(CallbackBase):
 
         try:
             CallbackBase.v2_runner_on_start
-        except:
+        except AttributeError:
             WorkerProcess.__init__ = self._infect_worker(WorkerProcess.__init__)
 
     def _infect_worker(self, func):
