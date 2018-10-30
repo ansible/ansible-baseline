@@ -77,7 +77,10 @@ class CallbackModule(CallbackBase):
         self._play = None
         self._task = None
 
-        WorkerProcess.__init__ = self._infect_worker(WorkerProcess.__init__)
+        try:
+            CallbackBase.v2_runner_on_start
+        except:
+            WorkerProcess.__init__ = self._infect_worker(WorkerProcess.__init__)
 
     def _infect_worker(self, func):
         """Intended to wrap ``WorkerProcess.__init__`` and log the start time for a host
@@ -182,6 +185,9 @@ class CallbackModule(CallbackBase):
                             char=u'.'
                         )
             self._display.display(u'')
+
+    def v2_runner_on_start(self, host, task):
+        self._host_start[host.name] = current_time()
 
     def v2_runner_on_ok(self, result, **kwargs):
         """Note: Do as few calculations in here, and limit stored data to prevent excessive
