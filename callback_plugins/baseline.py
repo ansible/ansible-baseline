@@ -22,6 +22,16 @@ DOCUMENTATION = '''
           - key: show_host_timings
             section: baseline
         type: bool
+      display_recap:
+        description: Controls whether the recap is printed at the end, useful if you will automatically
+                     process the output files
+        env:
+          - name: BASELINE_DISPLAY_RECAP
+        ini:
+          - key: display_recap
+            section: baseline
+        type: bool
+        default: true
       write_json:
         description: Writes output to a JSON file
         default: False
@@ -77,6 +87,7 @@ class CallbackModule(CallbackBase):
         self._show_host_timings = True
         self._write_json = False
         self._json_file = '/tmp/baseline.json'
+        self._display_recap = True
 
         self._play = None
         self._task = None
@@ -130,11 +141,13 @@ class CallbackModule(CallbackBase):
             self._show_host_timings = self.get_option('show_host_timings')
             self._write_json = self.get_option('write_json')
             self._json_file = self.get_option('json_file')
+            self._display_recap = self.get_option('display_recap')
         except TypeError:
             # Ansible 2.4
             self._show_host_timings = self._plugin_options['show_host_timings']
             self._write_json = self._plugin_options['write_json']
             self._json_file = self._plugin_options['json_file']
+            self._display_recap = self._plugin_options['display_recap']
 
     def v2_playbook_on_play_start(self, play):
         self._results.append(self._new_play(play))
@@ -161,6 +174,9 @@ class CallbackModule(CallbackBase):
         if self._write_json:
             with open(self._json_file, 'w+') as f:
                 json.dump(self._results, f, indent=4, cls=_JSONEncoder)
+
+        if not self._display_recap:
+            return
 
         for play in self._results:
             try:
