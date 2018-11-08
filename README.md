@@ -53,3 +53,4 @@ Those configurations are things such as:
 1. Use of password auth via `sshpass` instead of key based auth
 1. Use of a jumphost/bastion via `ProxyCommand`
 1. Whether `ControlPersist` is enabled or not
+1. Use of `become`
