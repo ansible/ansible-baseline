@@ -11,6 +11,8 @@
 
     - include_role:
         name: baseline
+      tags:
+        - include
 
 - name: SSH baseline
   hosts: all
@@ -25,6 +27,8 @@
 
     - include_role:
         name: baseline
+      tags:
+        - include
 
 - name: SSH+pipelining baseline
   hosts: all
@@ -40,6 +44,8 @@
 
     - include_role:
         name: baseline
+      tags:
+        - include
 
 - name: Paramiko baseline
   hosts: all
@@ -53,3 +59,5 @@
 
     - include_role:
         name: baseline
+      tags:
+        - include
