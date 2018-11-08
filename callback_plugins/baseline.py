@@ -95,12 +95,15 @@ class CallbackModule(CallbackBase):
         try:
             CallbackBase.v2_runner_on_start
         except AttributeError:
+            # Ansible<2.8
             WorkerProcess.__init__ = self._infect_worker(WorkerProcess.__init__)
 
     def _infect_worker(self, func):
         """Intended to wrap ``WorkerProcess.__init__`` and log the start time for a host
 
         Please don't do this elsewhere, it's bad enough I'm doing it here.
+
+        Used on Ansible<2.8
         """
         def inner(*args):
             host = args[3]
