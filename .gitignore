@@ -105,3 +105,6 @@ venv.bak/
 
 # Ansible
 *.retry
+
+# baseline
+*.json
