@@ -17,7 +17,14 @@ $ ansible-playbook -i /path/to/inventory playbook.yml
 
 This repo ships a custom callback plugin named `baseline` that does *not* require whitelisting, and will always run.
 
-By default host timings are also shown, but this can be disabled using `BASELINE_SHOW_HOST_TIMINGS=0 ansible-playbook ...`
+#### Parameters
+
+| Parameter           | Choices/Defaults   | Configuration                                                                    | Comments                                                                                                    |
+|---------------------|--------------------|----------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------|
+| display\_recap      | (yes)/no           | [baseline]<br>display\_recap = yes<br><br>env:BASELINE\_DISPLAY\_RECAP           | Controls whether the recap is printed at the end, useful if you will automatically process the output files |
+| json\_file          | /tmp/baseline.json | [baseline]<br>json\_file = /tmp/baseline.json<br><br>env:BASELINE\_JSON\_FILE    | Path to JSON file for use with `write_json`                                                                 |
+| show\_host\_timings | (yes)/no           | [baseline]<br>show\_host\_timings = yes<br><br>env:BASELINE\_SHOW\_HOST\_TIMINGS | This adds host timings per task                                                                             |
+| write\_json         | yes/(no)           | [baseline]<br>write\_json = no<br><br>env:BASELINE\_WRITE\_JSON                  | Writes output to a JSON file                                                                                |
 
 #### Output description
 
