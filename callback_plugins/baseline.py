@@ -42,7 +42,7 @@ DOCUMENTATION = '''
             section: baseline
         type: bool
       json_file:
-        description: Path to JSON file for use with "write_json"
+        description: Path to JSON file for use with ``write_json``
         default: /tmp/baseline.json
         env:
           - name: BASELINE_JSON_FILE
