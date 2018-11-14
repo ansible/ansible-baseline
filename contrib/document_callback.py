@@ -27,8 +27,6 @@ import importlib
 import prettytable
 import yaml
 
-from callback_plugins import baseline
-
 
 def default(data):
     if data.get('type') == 'bool':
