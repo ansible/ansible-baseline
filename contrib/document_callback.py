@@ -29,11 +29,25 @@ import yaml
 
 
 def default(data):
-    if data.get('type') == 'bool':
+    typ = data.get('type', 'str')
+    choices = data.get('choices')
+    default = data.get('default')
+
+    if typ == 'bool':
         if data.get('default', False):
             return '(yes)/no'
         return 'yes/(no)'
-    return data.get('default')
+
+    elif choices:
+        ret = []
+        for c in choices:
+            if c == default:
+                ret.append(c.join(('(', ')')))
+            else:
+                ret.append(c)
+        return '/'.join(ret)
+
+    return default
 
 
 def bool_to_string(v):
@@ -44,25 +58,37 @@ def bool_to_string(v):
     return v
 
 
-def config(data):
+def config(data, br='\n| ', start='| '):
     out = []
     ini = data.get('ini', [])
-    #if ini:
-    #    out.append('ini entries:')
+    # if ini:
+    #     out.append('ini entries:')
     for section in ini:
         out.append('[%s]' % section['section'])
-        out.append(
-            '%s = %s' % (section['key'], bool_to_string(data.get('default')))
-        )
+        if data.get('required'):
+            out.append(
+                '%s = VALUE' % section['key']
+            )
+        else:
+            out.append(
+                '%s = %s' % (
+                    section['key'],
+                    bool_to_string(data.get('default'))
+                )
+            )
     out.append('')
     for section in data.get('env'):
         out.append('env:%s' % section['name'])
 
-    return '<br>'.join(out)
+    out[0] = '%s%s' % (start, out[0])
+
+    return br.join(out)
 
 
-def normalize(v):
+def normalize(v, rst=False):
     try:
+        if rst:
+            return v.replace('_', '\_')
         return v.replace('_', '\_').replace('``', '`')
     except AttributeError:
         if v is None:
@@ -70,16 +96,26 @@ def normalize(v):
         return v
 
 
-def param(name, data):
+def param(name, data, br='\n| ', start='| '):
     if data.get('required'):
-        return '%s<br>(required)' % name
+        return '%s%s%s(required)' % (start, name, br)
     return name
 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('module', nargs='?', default='callback_plugins.baseline')
+    parser.add_argument('module', nargs='?',
+                        default='callback_plugins.baseline')
+    parser.add_argument('--rst', action='store_true')
     args = parser.parse_args()
+
+    if args.rst:
+        br = '\n| '
+        start = '| '
+    else:
+        br = '<br>'
+        start = ''
+
     try:
         module = importlib.import_module(args.module)
     except ImportError as e:
@@ -93,14 +129,19 @@ def main():
 
     options = doc.get('options', {})
     for name, data in sorted(options.items(), key=lambda t: t[0]):
-        x.add_row([normalize(i) for i in (
-            param(name, data),
+        x.add_row([normalize(i, rst=args.rst) for i in (
+            param(name, data, br=br, start=start),
             default(data),
-            config(data),
+            config(data, br=br, start=start),
             data['description']
         )])
 
-    print('\n'.join(x.get_string(junction_char='|').splitlines()[1:-1]))
+    if args.rst:
+        lines = x.get_string(hrules=prettytable.ALL).splitlines()
+        lines[2] = lines[2].replace('-', '=')
+        print('\n'.join(lines))
+    else:
+        print('\n'.join(x.get_string(junction_char='|').splitlines()[1:-1]))
 
 
 if __name__ == '__main__':
