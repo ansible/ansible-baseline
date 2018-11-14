@@ -21,6 +21,9 @@
 from __future__ import (absolute_import, division, print_function)
 __metaclass__ = type
 
+import argparse
+import importlib
+
 import prettytable
 import yaml
 
@@ -28,11 +31,11 @@ from callback_plugins import baseline
 
 
 def default(data):
-    if data['type'] == 'bool':
+    if data.get('type') == 'bool':
         if data.get('default', False):
             return '(yes)/no'
         return 'yes/(no)'
-    return data['default']
+    return data.get('default')
 
 
 def bool_to_string(v):
@@ -45,10 +48,13 @@ def bool_to_string(v):
 
 def config(data):
     out = []
-    for section in data.get('ini', []):
+    ini = data.get('ini', [])
+    #if ini:
+    #    out.append('ini entries:')
+    for section in ini:
         out.append('[%s]' % section['section'])
         out.append(
-            '%s = %s' % (section['key'], bool_to_string(data['default']))
+            '%s = %s' % (section['key'], bool_to_string(data.get('default')))
         )
     out.append('')
     for section in data.get('env'):
@@ -58,11 +64,29 @@ def config(data):
 
 
 def normalize(v):
-    return v.replace('_', '\_').replace('``', '`')
+    try:
+        return v.replace('_', '\_').replace('``', '`')
+    except AttributeError:
+        if v is None:
+            return ''
+        return v
+
+
+def param(name, data):
+    if data.get('required'):
+        return '%s<br>(required)' % name
+    return name
 
 
 def main():
-    doc = yaml.safe_load(baseline.DOCUMENTATION)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('module', nargs='?', default='callback_plugins.baseline')
+    args = parser.parse_args()
+    try:
+        module = importlib.import_module(args.module)
+    except ImportError as e:
+        raise SystemExit('Could not import %s: %s' % (args.module, e))
+    doc = yaml.safe_load(module.DOCUMENTATION)
     x = prettytable.PrettyTable(
         ['Parameter', 'Choices/Defaults', 'Configuration', 'Comments']
     )
@@ -70,9 +94,9 @@ def main():
         x.align[k] = 'l'
 
     options = doc.get('options', {})
-    for param, data in sorted(options.items(), key=lambda t: t[0]):
+    for name, data in sorted(options.items(), key=lambda t: t[0]):
         x.add_row([normalize(i) for i in (
-            param,
+            param(name, data),
             default(data),
             config(data),
             data['description']
