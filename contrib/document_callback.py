@@ -88,7 +88,7 @@ def config(data, br='\n| ', start='| '):
 def normalize(v, rst=False):
     try:
         if rst:
-            return v.replace('_', '\_')
+            return v
         return v.replace('_', '\_').replace('``', '`')
     except AttributeError:
         if v is None:
