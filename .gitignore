@@ -108,3 +108,5 @@ venv.bak/
 
 # baseline
 *.json
+contrib/build_ssh/hosts
+*.pex

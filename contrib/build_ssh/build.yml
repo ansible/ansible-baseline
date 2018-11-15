@@ -1,0 +1,48 @@
+- name: Build docker image
+  hosts: localhost
+  gather_facts: false
+  tags:
+    - build
+  tasks:
+    - docker_image:
+        name: ssh
+        path: ./docker
+        force: true
+
+- name: Add in memory hosts
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - set_fact:
+        host_count: "{{ host_count|default(25) }}"
+
+    - add_host:
+        name: "ssh{{ ('%0' ~ host_count|length ~ 'd')|format(item) }}"
+        groups:
+          - docker
+        number: "{{ item }}"
+      loop: "{{ range(host_count|int)|list }}"
+
+- name: Start containers
+  hosts: docker
+  gather_facts: false
+  tasks:
+    - delegate_to: localhost
+      block:
+        - docker_container:
+            name: "{{ inventory_hostname }}"
+            image: ssh
+            ports:
+              - "{{ 2222 + number|int }}:22"
+            auto_remove: yes
+
+        - run_once: true
+          block:
+            - command: |
+                {{ ansible_python_interpreter|default('python') }} -c 'import sys, docker; from six.moves.urllib.parse import urlparse; print(urlparse(docker.from_env().api.base_url).netloc.split(":")[0])'
+              register: host
+              changed_when: false
+
+            - template:
+                src: hosts.j2
+                dest: hosts
