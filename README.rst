@@ -95,3 +95,16 @@ Those configurations are things such as:
 #. Use of a jumphost/bastion via ``ProxyCommand``
 #. Whether ``ControlPersist`` is enabled or not
 #. Use of ``become``
+#. Number of ``--forks``
+
+Goals
+-----
+
+This project is a minimal baseline representing the fundamental base
+functionality of Ansible for purposes of performance testing. Not all
+modules will be used, and only a small core subset are necessary.
+
+This project is not designed to test Ansible functionality.
+
+In addition, this project will be versioned to allow for changes
+that do not impact the ability for comparisons.
