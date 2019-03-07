@@ -116,7 +116,10 @@ def main():
 
                 w.writerow([play['play']['name'], name, host_name] + deltas)
 
-    print(f.getvalue())
+    try:
+        print(f.getvalue())
+    except IOError:
+        pass
 
 
 if __name__ == '__main__':
