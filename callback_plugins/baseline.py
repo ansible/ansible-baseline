@@ -186,7 +186,7 @@ class CallbackModule(CallbackBase):
                 play_duration = play['play']['duration']['end'] - play['play']['duration']['start']
             except KeyError:
                 # This may fail if the playbook was limited by tags
-                break
+                continue
             self._print_stat(
                 u'Play: %s' % play['play']['name'],
                 u'%0.2fs' % play_duration.total_seconds()
