@@ -20,6 +20,25 @@ Use
 
     $ ansible-playbook -i /path/to/inventory playbook.yml
 
+Tags
+~~~~
+
+::
+
+    playbook: playbook.yml
+
+      play #1 (all): Local baseline	TAGS: [local]
+          TASK TAGS: [include, local]
+
+      play #2 (all): SSH baseline	TAGS: [ssh]
+          TASK TAGS: [include, ssh]
+
+      play #3 (all): SSH+pipelining baseline	TAGS: [pipelining,ssh]
+          TASK TAGS: [include, pipelining, ssh]
+
+      play #4 (all): Paramiko baseline	TAGS: [paramiko]
+          TASK TAGS: [include, paramiko]
+
 Baseline callback plugin
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
