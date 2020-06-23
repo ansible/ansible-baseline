@@ -1,92 +1,107 @@
 - name: Gather Facts
   setup:
 
-- name: Create tmpdir for later use
-  tempfile:
-    state: directory
-  register: tempfile_result
+- vars:
+    file_list:
+      - 64k.bin
+      - 128k.bin
+      - 256k.bin
+      - 512k.bin
+      - 1024k.bin
+  block:
+    - name: Create target_tmpdir for later use
+      tempfile:
+        state: directory
+      register: target_tempfile_result
 
-- name: Set tmpdir fact
-  set_fact:
-    tmpdir: "{{ tempfile_result.path }}"
+    - name: Set target_tmpdir fact
+      set_fact:
+        target_tmpdir: "{{ target_tempfile_result.path }}"
 
-- ping:
+    - name: Createlocal_tmpdir for later use
+      tempfile:
+        state: directory
+      register: local_tempfile_result
+      delegate_to: localhost
+      run_once: true
 
-- raw: whoami
-  changed_when: false
+    - name: Set local_tmpdir fact
+      set_fact:
+        local_tmpdir: "{{ local_tempfile_result.path }}"
+      run_once: true
 
-- shell: whoami
-  changed_when: false
+    - ping:
 
-- name: Copy a sequence of files that are larger in each iteration
-  copy:
-    src: "{{ item }}"
-    dest: "{{ tmpdir }}/{{ item }}"
-  with_list:
-    - 64k.bin
-    - 128k.bin
-    - 256k.bin
-    - 512k.bin
-    - 1024k.bin
+    - raw: whoami
+      changed_when: false
 
-- name: Change permissions on the sequence of files
-  file:
-    path: "{{ tmpdir }}/{{ item }}"
-    mode: "0400"
-  with_list:
-    - 64k.bin
-    - 128k.bin
-    - 256k.bin
-    - 512k.bin
-    - 1024k.bin
+    - shell: whoami
+      changed_when: false
 
-- name: Stat all of the files
-  stat:
-    path: "{{ tmpdir }}/{{ item }}"
-  with_list:
-    - 64k.bin
-    - 128k.bin
-    - 256k.bin
-    - 512k.bin
-    - 1024k.bin
-  register: bin_stats
+    - name: Copy a sequence of files that are larger in each iteration
+      copy:
+        src: "{{ item }}"
+        dest: "{{ target_tmpdir }}/{{ item }}"
+      with_list: "{{ file_list }}"
 
-- name: Raw stat all of the files
-  raw: "stat {{ tmpdir }}/{{ item }}"
-  changed_when: false
-  with_list:
-    - 64k.bin
-    - 128k.bin
-    - 256k.bin
-    - 512k.bin
-    - 1024k.bin
-  register: raw_bin_stats
+    - name: Change permissions on the sequence of files
+      file:
+        path: "{{ target_tmpdir }}/{{ item }}"
+        mode: "0400"
+      with_list: "{{ file_list }}"
 
-- name: Raw python stat all of the files
-  raw: |
-    {{ ansible_python_interpreter|default('/usr/bin/python') }} -c 'import os, json; s = os.stat("{{ tmpdir }}/{{ item }}"); print(json.dumps(dict((a[3:], getattr(s, a)) for a in dir(s) if a[:3] == "st_")))'
-  changed_when: false
-  with_list:
-    - 64k.bin
-    - 128k.bin
-    - 256k.bin
-    - 512k.bin
-    - 1024k.bin
-  register: raw_python_bin_stats
+    - name: Stat all of the files
+      stat:
+        path: "{{ target_tmpdir }}/{{ item }}"
+      with_list: "{{ file_list }}"
+      register: bin_stats
 
-- name: Debug raw_python_bin_stats
-  debug:
-    msg: "{{ item.stdout|from_json }}"
-  with_list: "{{ raw_python_bin_stats.results }}"
-  loop_control:
-    label: "{{ item.item }}"
+    - name: Raw stat all of the files
+      raw: "stat {{ target_tmpdir }}/{{ item }}"
+      changed_when: false
+      with_list: "{{ file_list }}"
+      register: raw_bin_stats
 
-- name: Template out a file using hostvars
-  template:
-    src: template.j2
-    dest: "{{ tmpdir }}/template.out"
+    - name: Raw python stat all of the files
+      raw: |
+        {{ ansible_python_interpreter|default('/usr/bin/python') }} -c 'import os, json; s = os.stat("{{ target_tmpdir }}/{{ item }}"); print(json.dumps(dict((a[3:], getattr(s, a)) for a in dir(s) if a[:3] == "st_")))'
+      changed_when: false
+      with_list: "{{ file_list }}"
+      register: raw_python_bin_stats
 
-- name: Remove tmpdir
-  file:
-    path: "{{ tmpdir }}"
-    state: absent
+    - name: Debug raw_python_bin_stats
+      debug:
+        msg: "{{ item.stdout_lines|last|from_json }}"
+        verbosity: 1
+      with_list: "{{ raw_python_bin_stats.results }}"
+      loop_control:
+        label: "{{ item.item }}"
+
+    - name: Fetch copied files
+      fetch:
+        src: "{{ target_tmpdir }}/{{ item }}"
+        dest: "{{ local_tmpdir }}"
+      with_list: "{{ file_list }}"
+
+    - name: Slurp copied files
+      slurp:
+        src: "{{ target_tmpdir }}/{{ item }}"
+      with_list: "{{ file_list }}"
+
+    - name: Template out a file using hostvars
+      template:
+        src: template.j2
+        dest: "{{ target_tmpdir }}/template.out"
+
+  always:
+    - name: Remove target_tmpdir
+      file:
+        path: "{{ target_tmpdir }}"
+        state: absent
+
+    - name: Remove local_tmpdir
+      file:
+        path: "{{ local_tmpdir }}"
+        state: absent
+      delegate_to: localhost
+      run_once: true
