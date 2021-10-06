@@ -24,6 +24,8 @@
       register: local_tempfile_result
       delegate_to: localhost
       run_once: true
+      vars:
+        ansible_connection: local
 
     - name: Set local_tmpdir fact
       set_fact:
@@ -105,3 +107,5 @@
         state: absent
       delegate_to: localhost
       run_once: true
+      vars:
+        ansible_connection: local
