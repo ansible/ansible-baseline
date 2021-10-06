@@ -1,5 +1,5 @@
 {% for hostname, data in hostvars|dictsort|selectattr('1.docker_container', 'defined') %}
-{{ hostname }} ansible_host={{ host.stdout }} ansible_port={{ data.docker_container.HostConfig.PortBindings['22/tcp'].0.HostPort }}
+{{ hostname }} ansible_host={{ host.stdout }} ansible_port={{ data.docker_container.container.HostConfig.PortBindings['22/tcp'].0.HostPort }}
 {% endfor %}
 
 [all:vars]

@@ -1,7 +1,7 @@
 FROM alpine
 
 RUN set -eux && \
-    apk add --no-cache openssh python sudo && \
+    apk add --no-cache openssh python3 sudo && \
     /usr/sbin/adduser -D ansible && \
     echo 'ansible:ansible' | chpasswd
 

@@ -4,10 +4,12 @@
   tags:
     - build
   tasks:
-    - docker_image:
+    - community.docker.docker_image:
         name: ssh
-        path: ./docker
-        force: true
+        build:
+          path: ./docker
+        force_source: true
+        source: build
 
 - name: Add in memory hosts
   hosts: localhost
@@ -29,12 +31,13 @@
   tasks:
     - delegate_to: localhost
       block:
-        - docker_container:
+        - community.docker.docker_container:
             name: "{{ inventory_hostname }}"
             image: ssh
             ports:
               - "{{ 2222 + number|int }}:22"
             auto_remove: yes
+          register: docker_container
 
         - run_once: true
           block:
