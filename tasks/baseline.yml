@@ -18,7 +18,7 @@
       set_fact:
         target_tmpdir: "{{ target_tempfile_result.path }}"
 
-    - name: Createlocal_tmpdir for later use
+    - name: Create local_tmpdir for later use
       tempfile:
         state: directory
       register: local_tempfile_result
